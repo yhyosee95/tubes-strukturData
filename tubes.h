@@ -18,14 +18,26 @@ struct elmServis {
     int biayaServis;
 };
 
+//List child tambahan yaitu sparepart
+struct elmSparepart {
+    string IDSparepart;
+    string namaSparepart;
+    int harga;
+};
+
+
 // Deklarasi forward 
 struct nodeMekanik;
 struct nodeServis;
+struct nodeSparepart;
 struct nodeRelasi;
+struct nodeRelasiSparepart;
 
 typedef nodeMekanik* adrMekanik;
 typedef nodeServis* adrServis;
 typedef nodeRelasi* adrRelasi;
+
+
 
 //Node parent yaitu Mekanik
 struct nodeMekanik {
@@ -38,14 +50,9 @@ struct nodeMekanik {
 struct nodeServis {
     elmServis infoServis;
     adrServis nextServis; //ini adalah pointer ke servis selanjutnya
+    nodeRelasiSparepart* firstSparepart; // pointer ke relasi sparepart
 };
 
-//List child tambahan yaitu sparepart
-struct elmSparepart {
-    string IDSparepart;
-    string namaSparepart;
-    int harga;
-};
 
 //node child yang satunya yaitu sparepart
 struct nodeSparepart {
@@ -53,11 +60,17 @@ struct nodeSparepart {
     nodeSparepart* next;
 };
 
-//Node relasi yang menghubungkan Mekanik dan Servis
+//Node relasi yang menghubungkan Mekanik dan Servis dan sparepart
 struct nodeRelasi {
     adrServis servis; // pointer ke servis
     adrRelasi nextRelasi; // pointer ke relasi selanjutnya
 };
+
+struct nodeRelasiSparepart {
+    nodeSparepart* sparepart;
+    nodeRelasiSparepart* next;
+};
+
 
 //List struktur
 struct listMekanik {

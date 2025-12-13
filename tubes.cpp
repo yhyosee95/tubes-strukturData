@@ -1,10 +1,7 @@
 #include "tubes.h"
-#include <iostream>
 using namespace std;
 
-// =============================
-// CREATE LIST
-// =============================
+/* ================= CREATE LIST ================= */
 void createListMekanik(listMekanik &LM) {
     LM.firstMekanik = NULL;
 }
@@ -17,9 +14,7 @@ void createListSparepart(listSparepart &LP) {
     LP.first = NULL;
 }
 
-// =============================
-// CREATE ELEMEN
-// =============================
+/* ================= CREATE ELEM ================= */
 adrMekanik createElmMekanik(elmMekanik dataMekanik) {
     adrMekanik M = new nodeMekanik;
     M->infoMekanik = dataMekanik;
@@ -32,11 +27,12 @@ adrServis createElmServis(elmServis dataServis) {
     adrServis S = new nodeServis;
     S->infoServis = dataServis;
     S->nextServis = NULL;
+    S->firstSparepart = NULL;
     return S;
 }
 
 nodeSparepart* createElmSparepart(elmSparepart data) {
-    nodeSparepart *P = new nodeSparepart;
+    nodeSparepart* P = new nodeSparepart;
     P->info = data;
     P->next = NULL;
     return P;
@@ -49,34 +45,20 @@ adrRelasi createElmRelasi(adrServis servis) {
     return R;
 }
 
-// =============================
-// INSERT DATA
-// =============================
-void insertSparepart(listSparepart &LP, nodeSparepart* S) {
-    if (LP.first == NULL) {
-        LP.first = S;
-    } else {
-        S->next = LP.first;
-        LP.first = S;
-    }
-}
-
+/* ================= INSERT ================= */
 void insertMekanik(listMekanik &LM, adrMekanik M) {
-    if (LM.firstMekanik == NULL) {
-        LM.firstMekanik = M;
-    } else {
-        M->nextMekanik = LM.firstMekanik;
-        LM.firstMekanik = M;
-    }
+    M->nextMekanik = LM.firstMekanik;
+    LM.firstMekanik = M;
 }
 
 void insertServis(listServis &LS, adrServis S) {
-    if (LS.firstServis == NULL) {
-        LS.firstServis = S;
-    } else {
-        S->nextServis = LS.firstServis;
-        LS.firstServis = S;
-    }
+    S->nextServis = LS.firstServis;
+    LS.firstServis = S;
+}
+
+void insertSparepart(listSparepart &LP, nodeSparepart* S) {
+    S->next = LP.first;
+    LP.first = S;
 }
 
 void insertRelasi(adrMekanik mekanik, adrServis servis) {
@@ -85,15 +67,12 @@ void insertRelasi(adrMekanik mekanik, adrServis servis) {
     mekanik->firstRelasi = R;
 }
 
-// =============================
-// FIND DATA
-// =============================
+/* ================= FIND ================= */
 adrMekanik findMekanik(listMekanik LM, string IDMekanik) {
     adrMekanik M = LM.firstMekanik;
     while (M != NULL) {
-        if (M->infoMekanik.IDMekanik == IDMekanik) {
+        if (M->infoMekanik.IDMekanik == IDMekanik)
             return M;
-        }
         M = M->nextMekanik;
     }
     return NULL;
@@ -102,9 +81,8 @@ adrMekanik findMekanik(listMekanik LM, string IDMekanik) {
 adrServis findServis(listServis LS, string IDServis) {
     adrServis S = LS.firstServis;
     while (S != NULL) {
-        if (S->infoServis.IDServis == IDServis) {
+        if (S->infoServis.IDServis == IDServis)
             return S;
-        }
         S = S->nextServis;
     }
     return NULL;
@@ -113,86 +91,65 @@ adrServis findServis(listServis LS, string IDServis) {
 nodeSparepart* findSparepart(listSparepart LP, string ID) {
     nodeSparepart* P = LP.first;
     while (P != NULL) {
-        if (P->info.IDSparepart == ID) return P;
+        if (P->info.IDSparepart == ID)
+            return P;
         P = P->next;
     }
     return NULL;
 }
 
-// =============================
-// SHOW DATA
-// =============================
+/* ================= SHOW ================= */
 void showAllMekanik(listMekanik LM) {
     adrMekanik M = LM.firstMekanik;
-    cout << "=== DATA MEKANIK ===" << endl;
+    cout << "=== DATA MEKANIK ===\n";
     while (M != NULL) {
-        cout << "ID: " << M->infoMekanik.IDMekanik << endl;
-        cout << "Nama: " << M->infoMekanik.namaMekanik << endl;
-        cout << "Jam kerja: " << M->infoMekanik.jamKerja << endl;
-        cout << "----------------------" << endl;
+        cout << M->infoMekanik.IDMekanik << " | "
+             << M->infoMekanik.namaMekanik << " | "
+             << M->infoMekanik.jamKerja << endl;
         M = M->nextMekanik;
     }
 }
 
 void showAllServis(listServis LS) {
     adrServis S = LS.firstServis;
-    cout << "=== DATA SERVIS ===" << endl;
+    cout << "=== DATA SERVIS ===\n";
     while (S != NULL) {
-        cout << "ID: " << S->infoServis.IDServis << endl;
-        cout << "Kendaraan: " << S->infoServis.namaKendaraan << endl;
-        cout << "Biaya: " << S->infoServis.biayaServis << endl;
-        cout << "----------------------" << endl;
+        cout << S->infoServis.IDServis << " | "
+             << S->infoServis.namaKendaraan << " | "
+             << S->infoServis.biayaServis << endl;
         S = S->nextServis;
     }
 }
 
 void showAllSparepart(listSparepart LP) {
-    nodeSparepart *P = LP.first;
-    cout << "=== DATA SPAREPART ===" << endl;
+    nodeSparepart* P = LP.first;
+    cout << "=== DATA SPAREPART ===\n";
     while (P != NULL) {
-        cout << "ID: " << P->info.IDSparepart << endl;
-        cout << "Nama: " << P->info.namaSparepart << endl;
-        cout << "Harga: " << P->info.harga << endl;
-        cout << "----------------------" << endl;
+        cout << P->info.IDSparepart << " | "
+             << P->info.namaSparepart << " | "
+             << P->info.harga << endl;
         P = P->next;
     }
 }
 
 void showAllRelasi(listMekanik LM) {
     adrMekanik M = LM.firstMekanik;
-    cout << "=== DATA RELASI MEKANIK - SERVIS ===" << endl;
-
+    cout << "=== RELASI MEKANIK - SERVIS ===\n";
     while (M != NULL) {
         cout << "Mekanik: " << M->infoMekanik.namaMekanik << endl;
-
         adrRelasi R = M->firstRelasi;
         while (R != NULL) {
-            cout << "   - Servis: " << R->servis->infoServis.namaKendaraan
-                 << " | Biaya: " << R->servis->infoServis.biayaServis
-                 << endl;
+            cout << "  Servis: " << R->servis->infoServis.namaKendaraan << endl;
             R = R->nextRelasi;
         }
-        cout << "-------------------------------" << endl;
         M = M->nextMekanik;
     }
 }
 
-void showServisDariMekanik(listMekanik LM) {
-    string ID;
-    cout << "Masukkan ID Mekanik: ";
-    cin >> ID;
-
-    adrMekanik M = findMekanik(LM, ID);
-    if (M == NULL) {
-        cout << "Mekanik tidak ditemukan!" << endl;
-        return;
-    }
-
-    cout << "Servis yang ditangani mekanik " << M->infoMekanik.namaMekanik << ":" << endl;
-
-    adrRelasi R = M->firstRelasi;
+void showServisDariMekanik(adrMekanik mekanik) {
+    adrRelasi R = mekanik->firstRelasi;
     while (R != NULL) {
-        cout << "- " << R->servis->infoServis.namaKendaraan << endl;
+        cout << R->servis->infoServis.namaKendaraan << endl;
         R = R->nextRelasi;
     }
 }
@@ -202,29 +159,25 @@ void showMekanikdariServis(listMekanik LM, string IDServis) {
     while (M != NULL) {
         adrRelasi R = M->firstRelasi;
         while (R != NULL) {
-            if (R->servis->infoServis.IDServis == IDServis) {
-                cout << "Mekanik: " << M->infoMekanik.namaMekanik << endl;
-            }
+            if (R->servis->infoServis.IDServis == IDServis)
+                cout << M->infoMekanik.namaMekanik << endl;
             R = R->nextRelasi;
         }
         M = M->nextMekanik;
     }
 }
 
-// =============================
-// DELETE
-// =============================
+/* ================= DELETE ================= */
 void deleteRelasi(adrMekanik &M, string IDServis) {
     adrRelasi R = M->firstRelasi;
     adrRelasi prev = NULL;
 
     while (R != NULL) {
         if (R->servis->infoServis.IDServis == IDServis) {
-            if (prev == NULL) {
+            if (prev == NULL)
                 M->firstRelasi = R->nextRelasi;
-            } else {
+            else
                 prev->nextRelasi = R->nextRelasi;
-            }
             delete R;
             return;
         }
@@ -275,8 +228,10 @@ void deleteSparepart(listSparepart &LP, string ID) {
 
     while (P != NULL) {
         if (P->info.IDSparepart == ID) {
-            if (prev == NULL) LP.first = P->next;
-            else prev->next = P->next;
+            if (prev == NULL)
+                LP.first = P->next;
+            else
+                prev->next = P->next;
             delete P;
             return;
         }
