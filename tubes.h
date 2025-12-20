@@ -4,75 +4,49 @@
 #include <iostream>
 using namespace std;
 
-// ADT Parent, disini kami menggunakan Mekanik sebagai parent
+// ADT Parent: Mekanik
 struct elmMekanik {
     string IDMekanik;
     string namaMekanik;
     int jamKerja;
 };
 
-//Untuk childnya, kami menggunakan Servis sebagai child
+// ADT Child: Servis
 struct elmServis {
     string IDServis;
     string namaKendaraan;
     int biayaServis;
 };
 
-//List child tambahan yaitu sparepart
-struct elmSparepart {
-    string IDSparepart;
-    string namaSparepart;
-    int harga;
-};
-
-
-// Deklarasi forward 
+// Deklarasi forward
 struct nodeMekanik;
 struct nodeServis;
-struct nodeSparepart;
 struct nodeRelasi;
-struct nodeRelasiSparepart;
 
 typedef nodeMekanik* adrMekanik;
 typedef nodeServis* adrServis;
 typedef nodeRelasi* adrRelasi;
 
-
-
-//Node parent yaitu Mekanik
+// Node Parent: Mekanik
 struct nodeMekanik {
     elmMekanik infoMekanik;
     adrMekanik nextMekanik;
-    adrRelasi firstRelasi; // pointer ke relasi
+    adrRelasi firstRelasi; // pointer ke relasi dengan servis
 };
 
-//Node child yaitu Servis
+// Node Child: Servis
 struct nodeServis {
     elmServis infoServis;
-    adrServis nextServis; //ini adalah pointer ke servis selanjutnya
-    nodeRelasiSparepart* firstSparepart; // pointer ke relasi sparepart
+    adrServis nextServis;
 };
 
-
-//node child yang satunya yaitu sparepart
-struct nodeSparepart {
-    elmSparepart info;
-    nodeSparepart* next;
-};
-
-//Node relasi yang menghubungkan Mekanik dan Servis dan sparepart
+// Node Relasi antara Mekanik (Parent) dan Servis (Child)
 struct nodeRelasi {
     adrServis servis; // pointer ke servis
-    adrRelasi nextRelasi; // pointer ke relasi selanjutnya
+    adrRelasi nextRelasi;
 };
 
-struct nodeRelasiSparepart {
-    nodeSparepart* sparepart;
-    nodeRelasiSparepart* next;
-};
-
-
-//List struktur
+// Struktur List
 struct listMekanik {
     adrMekanik firstMekanik;
 };
@@ -81,53 +55,67 @@ struct listServis {
     adrServis firstServis;
 };
 
-struct listSparepart {
-    nodeSparepart* first;
-};
+// ================= FUNGSI UTAMA SESUAI SPESIFIKASI =================
 
-//Fungsi-fungsi
-//Disini kai menggunakan singkatan agar tidak memakan waktu dan tempat 
-//LM = List Mekanik 
-//LS = List Servis
+// a. Insert element parent (Mekanik)
+void insertMekanik(listMekanik &LM, elmMekanik data);
 
-//ini fungsi untuk membuat list mekanik dan servis
-void createListMekanik(listMekanik &LM);
-void createListServis(listServis &LS);
+// b. Insert element child (Servis)
+void insertServis(listServis &LS, elmServis data);
 
-//fungsi untuk membuat elemen mekanik, servis, dan relasi
-adrMekanik createElmMekanik(elmMekanik dataMekanik);
-adrServis createElmServis(elmServis dataServis);
-adrRelasi createElmRelasi(adrServis servis);
+// c. Insert element relation (Mekanik-Servis)
+void insertRelationMekanikServis(listMekanik &LM, listServis &LS, string IDMekanik, string IDServis);
 
-//fungsi untuk menemukan data data
+// d. Delete element parent (Mekanik)
+void deleteMekanik(listMekanik &LM, string IDMekanik);
+
+// e. Delete element child (Servis)
+void deleteServis(listServis &LS, string IDServis);
+
+// f. Delete element relation (Mekanik-Servis)
+void deleteRelationMekanikServis(adrMekanik mekanik, string IDServis);
+
+// g. Find element Parent (Mekanik)
 adrMekanik findMekanik(listMekanik LM, string IDMekanik);
+
+// h. Find element child (Servis)
 adrServis findServis(listServis LS, string IDServis);
 
-//fungsi untuk menampilkan data
+// i. Find element relation (Mekanik-Servis)
+bool findRelationMekanikServis(adrMekanik mekanik, string IDServis);
+
+// j. Show all data di List Parent (Mekanik)
 void showAllMekanik(listMekanik LM);
+
+// k. Show all data di List Child (Servis)
 void showAllServis(listServis LS);
-void showAllRelasi(listMekanik LM);
 
-void showServisDariMekanik(adrMekanik mekanik);
-void showMekanikdariServis(listMekanik LM, string IDServis);
+// l. Show data child dari parent tertentu (Servis dari Mekanik)
+void showServisFromMekanik(adrMekanik mekanik);
 
-//fungsi delete
-void deleteMekanik(listMekanik &LM, string IDMekanik);
-void deleteServis(listServis &LS, string IDServis);
-void deleteRelasi(adrMekanik &M, string IDServis);
+// m. Show setiap data parent beserta data child yang berelasi dengannya
+void showAllMekanikWithServis(listMekanik LM);
 
-//kami menambahkan fungsi baru untuk sparepart
-void createListSparepart(listSparepart &LP);
-nodeSparepart* createElmSparepart(elmSparepart data);
-void insertSparepart(listSparepart &LP, nodeSparepart* S);
-void showAllSparepart(listSparepart LP);
-nodeSparepart* findSparepart(listSparepart LP, string ID);
-void deleteSparepart(listSparepart &LP, string ID);
+// n. Show data child beserta data parent yang masing-masing child miliki
+void showAllServisWithMekanik(listMekanik LM, listServis LS);
 
-//fungsi insert
-void insertMekanik(listMekanik &LM, adrMekanik M);
-void insertServis(listServis &LS, adrServis S);
-void insertRelasi(adrMekanik mekanik, adrServis servis);
+// o. Show data parent yang berelasi dengan child tertentu
+void showMekanikFromServis(listMekanik LM, string IDServis);
 
+// p. Count relation dari setiap element parent
+int countRelationMekanikServis(adrMekanik mekanik);
+
+// q. Count relation yang dimiliki oleh child tertentu
+int countRelationFromServis(listMekanik LM, string IDServis);
+
+// r. Count element child yang tidak memiliki relasi
+int countServisWithoutRelation(listMekanik LM, listServis LS);
+
+// s. Edit relasi / mengganti child dari parent tertentu
+void editRelationMekanikServis(adrMekanik mekanik, string IDServisLama, string IDServisBaru, listServis LS);
+
+// Fungsi tambahan untuk inisialisasi
+void createListMekanik(listMekanik &LM);
+void createListServis(listServis &LS);
 
 #endif

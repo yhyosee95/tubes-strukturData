@@ -1,7 +1,8 @@
 #include "tubes.h"
+#include <iostream>
 using namespace std;
 
-/* ================= CREATE LIST ================= */
+/* ================= INISIALISASI ================= */
 void createListMekanik(listMekanik &LM) {
     LM.firstMekanik = NULL;
 }
@@ -10,232 +11,474 @@ void createListServis(listServis &LS) {
     LS.firstServis = NULL;
 }
 
-void createListSparepart(listSparepart &LP) {
-    LP.first = NULL;
-}
+/* ================= FUNGSI UTAMA ================= */
 
-/* ================= CREATE ELEM ================= */
-adrMekanik createElmMekanik(elmMekanik dataMekanik) {
+// a. Insert element parent (Mekanik)
+void insertMekanik(listMekanik &LM, elmMekanik data) {
     adrMekanik M = new nodeMekanik;
-    M->infoMekanik = dataMekanik;
+    M->infoMekanik = data;
     M->nextMekanik = NULL;
     M->firstRelasi = NULL;
-    return M;
+
+    if (LM.firstMekanik == NULL) {
+        LM.firstMekanik = M;
+    } else {
+        adrMekanik curr = LM.firstMekanik;
+        while (curr->nextMekanik != NULL) {
+            curr = curr->nextMekanik;
+        }
+        curr->nextMekanik = M;
+    }
+    cout << "Mekanik berhasil ditambahkan.\n";
 }
 
-adrServis createElmServis(elmServis dataServis) {
+// b. Insert element child (Servis)
+void insertServis(listServis &LS, elmServis data) {
     adrServis S = new nodeServis;
-    S->infoServis = dataServis;
+    S->infoServis = data;
     S->nextServis = NULL;
-    S->firstSparepart = NULL;
-    return S;
+
+    if (LS.firstServis == NULL) {
+        LS.firstServis = S;
+    } else {
+        adrServis curr = LS.firstServis;
+        while (curr->nextServis != NULL) {
+            curr = curr->nextServis;
+        }
+        curr->nextServis = S;
+    }
+    cout << "Servis berhasil ditambahkan.\n";
 }
 
-nodeSparepart* createElmSparepart(elmSparepart data) {
-    nodeSparepart* P = new nodeSparepart;
-    P->info = data;
-    P->next = NULL;
-    return P;
-}
+// c. Insert element relation (Mekanik-Servis)
+void insertRelationMekanikServis(listMekanik &LM, listServis &LS, string IDMekanik, string IDServis) {
+    adrMekanik M = findMekanik(LM, IDMekanik);
+    adrServis S = findServis(LS, IDServis);
 
-adrRelasi createElmRelasi(adrServis servis) {
+    if (M == NULL) {
+        cout << "Mekanik dengan ID " << IDMekanik << " tidak ditemukan.\n";
+        return;
+    }
+
+    if (S == NULL) {
+        cout << "Servis dengan ID " << IDServis << " tidak ditemukan.\n";
+        return;
+    }
+
+    // Cek apakah relasi sudah ada
+    if (findRelationMekanikServis(M, IDServis)) {
+        cout << "Relasi antara mekanik " << IDMekanik << " dan servis " << IDServis << " sudah ada.\n";
+        return;
+    }
+
+    // Buat node relasi baru
     adrRelasi R = new nodeRelasi;
-    R->servis = servis;
+    R->servis = S;
     R->nextRelasi = NULL;
-    return R;
-}
 
-/* ================= INSERT ================= */
-void insertMekanik(listMekanik &LM, adrMekanik M) {
-    M->nextMekanik = LM.firstMekanik;
-    LM.firstMekanik = M;
-}
-
-void insertServis(listServis &LS, adrServis S) {
-    S->nextServis = LS.firstServis;
-    LS.firstServis = S;
-}
-
-void insertSparepart(listSparepart &LP, nodeSparepart* S) {
-    S->next = LP.first;
-    LP.first = S;
-}
-
-void insertRelasi(adrMekanik mekanik, adrServis servis) {
-    adrRelasi R = createElmRelasi(servis);
-    R->nextRelasi = mekanik->firstRelasi;
-    mekanik->firstRelasi = R;
-}
-
-/* ================= FIND ================= */
-adrMekanik findMekanik(listMekanik LM, string IDMekanik) {
-    adrMekanik M = LM.firstMekanik;
-    while (M != NULL) {
-        if (M->infoMekanik.IDMekanik == IDMekanik)
-            return M;
-        M = M->nextMekanik;
-    }
-    return NULL;
-}
-
-adrServis findServis(listServis LS, string IDServis) {
-    adrServis S = LS.firstServis;
-    while (S != NULL) {
-        if (S->infoServis.IDServis == IDServis)
-            return S;
-        S = S->nextServis;
-    }
-    return NULL;
-}
-
-nodeSparepart* findSparepart(listSparepart LP, string ID) {
-    nodeSparepart* P = LP.first;
-    while (P != NULL) {
-        if (P->info.IDSparepart == ID)
-            return P;
-        P = P->next;
-    }
-    return NULL;
-}
-
-/* ================= SHOW ================= */
-void showAllMekanik(listMekanik LM) {
-    adrMekanik M = LM.firstMekanik;
-    cout << "=== DATA MEKANIK ===\n";
-    while (M != NULL) {
-        cout << M->infoMekanik.IDMekanik << " | "
-             << M->infoMekanik.namaMekanik << " | "
-             << M->infoMekanik.jamKerja << endl;
-        M = M->nextMekanik;
-    }
-}
-
-void showAllServis(listServis LS) {
-    adrServis S = LS.firstServis;
-    cout << "=== DATA SERVIS ===\n";
-    while (S != NULL) {
-        cout << S->infoServis.IDServis << " | "
-             << S->infoServis.namaKendaraan << " | "
-             << S->infoServis.biayaServis << endl;
-        S = S->nextServis;
-    }
-}
-
-void showAllSparepart(listSparepart LP) {
-    nodeSparepart* P = LP.first;
-    cout << "=== DATA SPAREPART ===\n";
-    while (P != NULL) {
-        cout << P->info.IDSparepart << " | "
-             << P->info.namaSparepart << " | "
-             << P->info.harga << endl;
-        P = P->next;
-    }
-}
-
-void showAllRelasi(listMekanik LM) {
-    adrMekanik M = LM.firstMekanik;
-    cout << "=== RELASI MEKANIK - SERVIS ===\n";
-    while (M != NULL) {
-        cout << "Mekanik: " << M->infoMekanik.namaMekanik << endl;
-        adrRelasi R = M->firstRelasi;
-        while (R != NULL) {
-            cout << "  Servis: " << R->servis->infoServis.namaKendaraan << endl;
-            R = R->nextRelasi;
+    // Tambahkan relasi ke list relasi mekanik
+    if (M->firstRelasi == NULL) {
+        M->firstRelasi = R;
+    } else {
+        adrRelasi curr = M->firstRelasi;
+        while (curr->nextRelasi != NULL) {
+            curr = curr->nextRelasi;
         }
-        M = M->nextMekanik;
+        curr->nextRelasi = R;
     }
+
+    cout << "Relasi antara mekanik " << IDMekanik << " dan servis " << IDServis << " berhasil dibuat.\n";
 }
 
-void showServisDariMekanik(adrMekanik mekanik) {
-    adrRelasi R = mekanik->firstRelasi;
-    while (R != NULL) {
-        cout << R->servis->infoServis.namaKendaraan << endl;
-        R = R->nextRelasi;
-    }
-}
-
-void showMekanikdariServis(listMekanik LM, string IDServis) {
-    adrMekanik M = LM.firstMekanik;
-    while (M != NULL) {
-        adrRelasi R = M->firstRelasi;
-        while (R != NULL) {
-            if (R->servis->infoServis.IDServis == IDServis)
-                cout << M->infoMekanik.namaMekanik << endl;
-            R = R->nextRelasi;
-        }
-        M = M->nextMekanik;
-    }
-}
-
-/* ================= DELETE ================= */
-void deleteRelasi(adrMekanik &M, string IDServis) {
-    adrRelasi R = M->firstRelasi;
-    adrRelasi prev = NULL;
-
-    while (R != NULL) {
-        if (R->servis->infoServis.IDServis == IDServis) {
-            if (prev == NULL)
-                M->firstRelasi = R->nextRelasi;
-            else
-                prev->nextRelasi = R->nextRelasi;
-            delete R;
-            return;
-        }
-        prev = R;
-        R = R->nextRelasi;
-    }
-}
-
+// d. Delete element parent (Mekanik)
 void deleteMekanik(listMekanik &LM, string IDMekanik) {
+    if (LM.firstMekanik == NULL) {
+        cout << "List mekanik kosong.\n";
+        return;
+    }
+
     adrMekanik M = LM.firstMekanik;
     adrMekanik prev = NULL;
 
+    // Cari mekanik yang akan dihapus
+    while (M != NULL && M->infoMekanik.IDMekanik != IDMekanik) {
+        prev = M;
+        M = M->nextMekanik;
+    }
+
+    if (M == NULL) {
+        cout << "Mekanik dengan ID " << IDMekanik << " tidak ditemukan.\n";
+        return;
+    }
+
+    // Hapus semua relasi yang terkait
+    adrRelasi R = M->firstRelasi;
+    while (R != NULL) {
+        adrRelasi temp = R;
+        R = R->nextRelasi;
+        delete temp;
+    }
+
+    // Hapus mekanik dari list
+    if (prev == NULL) {
+        LM.firstMekanik = M->nextMekanik;
+    } else {
+        prev->nextMekanik = M->nextMekanik;
+    }
+
+    delete M;
+    cout << "Mekanik dengan ID " << IDMekanik << " berhasil dihapus.\n";
+}
+
+// e. Delete element child (Servis)
+void deleteServis(listServis &LS, string IDServis) {
+    if (LS.firstServis == NULL) {
+        cout << "List servis kosong.\n";
+        return;
+    }
+
+    adrServis S = LS.firstServis;
+    adrServis prev = NULL;
+
+    // Cari servis yang akan dihapus
+    while (S != NULL && S->infoServis.IDServis != IDServis) {
+        prev = S;
+        S = S->nextServis;
+    }
+
+    if (S == NULL) {
+        cout << "Servis dengan ID " << IDServis << " tidak ditemukan.\n";
+        return;
+    }
+
+    // Hapus servis dari list
+    if (prev == NULL) {
+        LS.firstServis = S->nextServis;
+    } else {
+        prev->nextServis = S->nextServis;
+    }
+
+    delete S;
+    cout << "Servis dengan ID " << IDServis << " berhasil dihapus.\n";
+    cout << "Catatan: Relasi yang menggunakan servis ini masih perlu dihapus manual dari masing-masing mekanik.\n";
+}
+
+// f. Delete element relation (Mekanik-Servis)
+void deleteRelationMekanikServis(adrMekanik mekanik, string IDServis) {
+    if (mekanik == NULL) {
+        cout << "Mekanik tidak valid.\n";
+        return;
+    }
+
+    if (mekanik->firstRelasi == NULL) {
+        cout << "Mekanik tidak memiliki relasi servis.\n";
+        return;
+    }
+
+    adrRelasi R = mekanik->firstRelasi;
+    adrRelasi prev = NULL;
+
+    // Cari relasi yang akan dihapus
+    while (R != NULL && R->servis->infoServis.IDServis != IDServis) {
+        prev = R;
+        R = R->nextRelasi;
+    }
+
+    if (R == NULL) {
+        cout << "Relasi dengan servis " << IDServis << " tidak ditemukan pada mekanik ini.\n";
+        return;
+    }
+
+    // Hapus relasi
+    if (prev == NULL) {
+        mekanik->firstRelasi = R->nextRelasi;
+    } else {
+        prev->nextRelasi = R->nextRelasi;
+    }
+
+    delete R;
+    cout << "Relasi dengan servis " << IDServis << " berhasil dihapus dari mekanik.\n";
+}
+
+// g. Find element Parent (Mekanik)
+adrMekanik findMekanik(listMekanik LM, string IDMekanik) {
+    adrMekanik M = LM.firstMekanik;
     while (M != NULL) {
         if (M->infoMekanik.IDMekanik == IDMekanik) {
-            if (prev == NULL)
-                LM.firstMekanik = M->nextMekanik;
-            else
-                prev->nextMekanik = M->nextMekanik;
-            delete M;
-            return;
+            return M;
         }
-        prev = M;
+        M = M->nextMekanik;
+    }
+    return NULL;
+}
+
+// h. Find element child (Servis)
+adrServis findServis(listServis LS, string IDServis) {
+    adrServis S = LS.firstServis;
+    while (S != NULL) {
+        if (S->infoServis.IDServis == IDServis) {
+            return S;
+        }
+        S = S->nextServis;
+    }
+    return NULL;
+}
+
+// i. Find element relation (Mekanik-Servis)
+bool findRelationMekanikServis(adrMekanik mekanik, string IDServis) {
+    if (mekanik == NULL) return false;
+
+    adrRelasi R = mekanik->firstRelasi;
+    while (R != NULL) {
+        if (R->servis->infoServis.IDServis == IDServis) {
+            return true;
+        }
+        R = R->nextRelasi;
+    }
+    return false;
+}
+
+// j. Show all data di List Parent (Mekanik)
+void showAllMekanik(listMekanik LM) {
+    cout << "\n=== DATA SEMUA MEKANIK (PARENT) ===\n";
+    if (LM.firstMekanik == NULL) {
+        cout << "Tidak ada data mekanik.\n";
+        return;
+    }
+
+    adrMekanik M = LM.firstMekanik;
+    int no = 1;
+    while (M != NULL) {
+        cout << no << ". ID: " << M->infoMekanik.IDMekanik
+             << " | Nama: " << M->infoMekanik.namaMekanik
+             << " | Jam Kerja: " << M->infoMekanik.jamKerja << " jam"
+             << " | Jumlah Servis: " << countRelationMekanikServis(M) << "\n";
+        M = M->nextMekanik;
+        no++;
+    }
+}
+
+// k. Show all data di List Child (Servis)
+void showAllServis(listServis LS) {
+    cout << "\n=== DATA SEMUA SERVIS (CHILD) ===\n";
+    if (LS.firstServis == NULL) {
+        cout << "Tidak ada data servis.\n";
+        return;
+    }
+
+    adrServis S = LS.firstServis;
+    int no = 1;
+    while (S != NULL) {
+        cout << no << ". ID: " << S->infoServis.IDServis
+             << " | Kendaraan: " << S->infoServis.namaKendaraan
+             << " | Biaya: Rp " << S->infoServis.biayaServis << "\n";
+        S = S->nextServis;
+        no++;
+    }
+}
+
+// l. Show data child dari parent tertentu (Servis dari Mekanik)
+void showServisFromMekanik(adrMekanik mekanik) {
+    if (mekanik == NULL) {
+        cout << "Mekanik tidak valid.\n";
+        return;
+    }
+
+    cout << "\n=== SERVIS YANG DITANGANI OLEH: " << mekanik->infoMekanik.namaMekanik << " ===\n";
+    if (mekanik->firstRelasi == NULL) {
+        cout << "Mekanik ini tidak menangani servis apapun.\n";
+        return;
+    }
+
+    adrRelasi R = mekanik->firstRelasi;
+    int no = 1;
+    while (R != NULL) {
+        cout << no << ". ID: " << R->servis->infoServis.IDServis
+             << " | Kendaraan: " << R->servis->infoServis.namaKendaraan
+             << " | Biaya: Rp " << R->servis->infoServis.biayaServis << "\n";
+        R = R->nextRelasi;
+        no++;
+    }
+}
+
+// m. Show setiap data parent beserta data child yang berelasi dengannya
+void showAllMekanikWithServis(listMekanik LM) {
+    cout << "\n=== SEMUA MEKANIK BESERTA SERVIS YANG DITANGANI ===\n";
+    if (LM.firstMekanik == NULL) {
+        cout << "Tidak ada data mekanik.\n";
+        return;
+    }
+
+    adrMekanik M = LM.firstMekanik;
+    while (M != NULL) {
+        cout << "\nMekanik: " << M->infoMekanik.namaMekanik
+             << " (ID: " << M->infoMekanik.IDMekanik << ")\n";
+
+        if (M->firstRelasi == NULL) {
+            cout << "  - Tidak menangani servis\n";
+        } else {
+            adrRelasi R = M->firstRelasi;
+            while (R != NULL) {
+                cout << "  - " << R->servis->infoServis.namaKendaraan
+                     << " (ID: " << R->servis->infoServis.IDServis << ")\n";
+                R = R->nextRelasi;
+            }
+        }
         M = M->nextMekanik;
     }
 }
 
-void deleteServis(listServis &LS, string IDServis) {
-    adrServis S = LS.firstServis;
-    adrServis prev = NULL;
+// n. Show data child beserta data parent yang masing-masing child miliki
+void showAllServisWithMekanik(listMekanik LM, listServis LS) {
+    cout << "\n=== SEMUA SERVIS BESERTA MEKANIK YANG MENANGANI ===\n";
+    if (LS.firstServis == NULL) {
+        cout << "Tidak ada data servis.\n";
+        return;
+    }
 
+    adrServis S = LS.firstServis;
     while (S != NULL) {
-        if (S->infoServis.IDServis == IDServis) {
-            if (prev == NULL)
-                LS.firstServis = S->nextServis;
-            else
-                prev->nextServis = S->nextServis;
-            delete S;
-            return;
+        cout << "\nServis: " << S->infoServis.namaKendaraan
+             << " (ID: " << S->infoServis.IDServis << ")\n";
+
+        // Cari semua mekanik yang menangani servis ini
+        adrMekanik M = LM.firstMekanik;
+        bool ditangani = false;
+
+        while (M != NULL) {
+            adrRelasi R = M->firstRelasi;
+            while (R != NULL) {
+                if (R->servis->infoServis.IDServis == S->infoServis.IDServis) {
+                    cout << "  - Ditangani oleh: " << M->infoMekanik.namaMekanik
+                         << " (ID: " << M->infoMekanik.IDMekanik << ")\n";
+                    ditangani = true;
+                    break;
+                }
+                R = R->nextRelasi;
+            }
+            M = M->nextMekanik;
         }
-        prev = S;
+
+        if (!ditangani) {
+            cout << "  - Tidak ditangani oleh mekanik manapun\n";
+        }
+
         S = S->nextServis;
     }
 }
 
-void deleteSparepart(listSparepart &LP, string ID) {
-    nodeSparepart* P = LP.first;
-    nodeSparepart* prev = NULL;
+// o. Show data parent yang berelasi dengan child tertentu
+void showMekanikFromServis(listMekanik LM, string IDServis) {
+    cout << "\n=== MEKANIK YANG MENANGANI SERVIS ID: " << IDServis << " ===\n";
 
-    while (P != NULL) {
-        if (P->info.IDSparepart == ID) {
-            if (prev == NULL)
-                LP.first = P->next;
-            else
-                prev->next = P->next;
-            delete P;
-            return;
+    adrMekanik M = LM.firstMekanik;
+    bool ditemukan = false;
+
+    while (M != NULL) {
+        adrRelasi R = M->firstRelasi;
+        while (R != NULL) {
+            if (R->servis->infoServis.IDServis == IDServis) {
+                cout << "  - " << M->infoMekanik.namaMekanik
+                     << " (ID: " << M->infoMekanik.IDMekanik
+                     << ", Jam Kerja: " << M->infoMekanik.jamKerja << " jam)\n";
+                ditemukan = true;
+                break;
+            }
+            R = R->nextRelasi;
         }
-        prev = P;
-        P = P->next;
+        M = M->nextMekanik;
     }
+
+    if (!ditemukan) {
+        cout << "Servis ini tidak ditangani oleh mekanik manapun.\n";
+    }
+}
+
+// p. Count relation dari setiap element parent
+int countRelationMekanikServis(adrMekanik mekanik) {
+    if (mekanik == NULL) return 0;
+
+    int count = 0;
+    adrRelasi R = mekanik->firstRelasi;
+    while (R != NULL) {
+        count++;
+        R = R->nextRelasi;
+    }
+    return count;
+}
+
+// q. Count relation yang dimiliki oleh child tertentu
+int countRelationFromServis(listMekanik LM, string IDServis) {
+    int count = 0;
+
+    adrMekanik M = LM.firstMekanik;
+    while (M != NULL) {
+        adrRelasi R = M->firstRelasi;
+        while (R != NULL) {
+            if (R->servis->infoServis.IDServis == IDServis) {
+                count++;
+                break; // break karena sudah ditemukan di mekanik ini
+            }
+            R = R->nextRelasi;
+        }
+        M = M->nextMekanik;
+    }
+
+    return count;
+}
+
+// r. Count element child yang tidak memiliki relasi
+int countServisWithoutRelation(listMekanik LM, listServis LS) {
+    int count = 0;
+
+    adrServis S = LS.firstServis;
+    while (S != NULL) {
+        if (countRelationFromServis(LM, S->infoServis.IDServis) == 0) {
+            count++;
+        }
+        S = S->nextServis;
+    }
+
+    return count;
+}
+
+// s. Edit relasi / mengganti child dari parent tertentu
+void editRelationMekanikServis(adrMekanik mekanik, string IDServisLama, string IDServisBaru, listServis LS) {
+    if (mekanik == NULL) {
+        cout << "Mekanik tidak valid.\n";
+        return;
+    }
+
+    // Cek apakah servis lama ada di relasi mekanik
+    if (!findRelationMekanikServis(mekanik, IDServisLama)) {
+        cout << "Servis lama (" << IDServisLama << ") tidak ditemukan dalam relasi mekanik ini.\n";
+        return;
+    }
+
+    // Cek apakah servis baru ada di list servis
+    adrServis SBaru = findServis(LS, IDServisBaru);
+    if (SBaru == NULL) {
+        cout << "Servis baru (" << IDServisBaru << ") tidak ditemukan.\n";
+        return;
+    }
+
+    // Hapus relasi lama
+    deleteRelationMekanikServis(mekanik, IDServisLama);
+
+    // Tambahkan relasi baru
+    adrRelasi R = new nodeRelasi;
+    R->servis = SBaru;
+    R->nextRelasi = NULL;
+
+    if (mekanik->firstRelasi == NULL) {
+        mekanik->firstRelasi = R;
+    } else {
+        adrRelasi curr = mekanik->firstRelasi;
+        while (curr->nextRelasi != NULL) {
+            curr = curr->nextRelasi;
+        }
+        curr->nextRelasi = R;
+    }
+
+    cout << "Relasi berhasil diedit: " << IDServisLama << " -> " << IDServisBaru << "\n";
 }
