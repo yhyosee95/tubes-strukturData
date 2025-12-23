@@ -11,6 +11,10 @@ void createListServis(listServis &LS) {
     LS.firstServis = NULL;
 }
 
+void createListSparepart(listSparepart &LSP) {
+    LSP.firstSparepart = NULL;
+}
+
 /* ================= FUNGSI UTAMA ================= */
 
 // a. Insert element parent (Mekanik)
@@ -18,7 +22,7 @@ void insertMekanik(listMekanik &LM, elmMekanik data) {
     adrMekanik M = new nodeMekanik;
     M->infoMekanik = data;
     M->nextMekanik = NULL;
-    M->firstRelasi = NULL;
+    M->firstRelasiMekanikServis = NULL;
 
     if (LM.firstMekanik == NULL) {
         LM.firstMekanik = M;
@@ -37,6 +41,7 @@ void insertServis(listServis &LS, elmServis data) {
     adrServis S = new nodeServis;
     S->infoServis = data;
     S->nextServis = NULL;
+    S->firstRelasiServisSparepart = NULL;
 
     if (LS.firstServis == NULL) {
         LS.firstServis = S;
@@ -48,6 +53,24 @@ void insertServis(listServis &LS, elmServis data) {
         curr->nextServis = S;
     }
     cout << "Servis berhasil ditambahkan.\n";
+}
+
+// b. Insert element child (Sparepart)
+void insertSparepart(listSparepart &LSP, elmSparepart data) {
+    adrSparepart SP = new nodeSparepart;
+    SP->infoSparepart = data;
+    SP->nextSparepart = NULL;
+
+    if (LSP.firstSparepart == NULL) {
+        LSP.firstSparepart = SP;
+    } else {
+        adrSparepart curr = LSP.firstSparepart;
+        while (curr->nextSparepart != NULL) {
+            curr = curr->nextSparepart;
+        }
+        curr->nextSparepart = SP;
+    }
+    cout << "Sparepart berhasil ditambahkan.\n";
 }
 
 // c. Insert element relation (Mekanik-Servis)
@@ -72,22 +95,72 @@ void insertRelationMekanikServis(listMekanik &LM, listServis &LS, string IDMekan
     }
 
     // Buat node relasi baru
-    adrRelasi R = new nodeRelasi;
+    adrRelasiMekanikServis R = new nodeRelasiMekanikServis;
     R->servis = S;
-    R->nextRelasi = NULL;
+    R->nextRelasiMekanikServis = NULL;
 
     // Tambahkan relasi ke list relasi mekanik
-    if (M->firstRelasi == NULL) {
-        M->firstRelasi = R;
+    if (M->firstRelasiMekanikServis == NULL) {
+        M->firstRelasiMekanikServis = R;
     } else {
-        adrRelasi curr = M->firstRelasi;
-        while (curr->nextRelasi != NULL) {
-            curr = curr->nextRelasi;
+        adrRelasiMekanikServis curr = M->firstRelasiMekanikServis;
+        while (curr->nextRelasiMekanikServis != NULL) {
+            curr = curr->nextRelasiMekanikServis;
         }
-        curr->nextRelasi = R;
+        curr->nextRelasiMekanikServis = R;
     }
 
     cout << "Relasi antara mekanik " << IDMekanik << " dan servis " << IDServis << " berhasil dibuat.\n";
+}
+
+// c. Insert element relation (Servis-Sparepart)
+void insertRelationServisSparepart(listServis &LS, listSparepart &LSP, string IDServis, string IDSparepart, int jumlah) {
+    adrServis S = findServis(LS, IDServis);
+    adrSparepart SP = findSparepart(LSP, IDSparepart);
+
+    if (S == NULL) {
+        cout << "Servis dengan ID " << IDServis << " tidak ditemukan.\n";
+        return;
+    }
+
+    if (SP == NULL) {
+        cout << "Sparepart dengan ID " << IDSparepart << " tidak ditemukan.\n";
+        return;
+    }
+
+    // Cek apakah stok cukup
+    if (SP->infoSparepart.stok < jumlah) {
+        cout << "Stok sparepart tidak mencukupi. Stok tersedia: " << SP->infoSparepart.stok << "\n";
+        return;
+    }
+
+    // Cek apakah relasi sudah ada
+    if (findRelationServisSparepart(S, IDSparepart)) {
+        cout << "Relasi antara servis " << IDServis << " dan sparepart " << IDSparepart << " sudah ada.\n";
+        return;
+    }
+
+    // Buat node relasi baru
+    adrRelasiServisSparepart R = new nodeRelasiServisSparepart;
+    R->sparepart = SP;
+    R->jumlah = jumlah;
+    R->nextRelasiServisSparepart = NULL;
+
+    // Kurangi stok sparepart
+    SP->infoSparepart.stok -= jumlah;
+
+    // Tambahkan relasi ke list relasi servis
+    if (S->firstRelasiServisSparepart == NULL) {
+        S->firstRelasiServisSparepart = R;
+    } else {
+        adrRelasiServisSparepart curr = S->firstRelasiServisSparepart;
+        while (curr->nextRelasiServisSparepart != NULL) {
+            curr = curr->nextRelasiServisSparepart;
+        }
+        curr->nextRelasiServisSparepart = R;
+    }
+
+    cout << "Relasi antara servis " << IDServis << " dan sparepart " << IDSparepart << " berhasil dibuat.\n";
 }
 
 // d. Delete element parent (Mekanik)
@@ -112,10 +185,10 @@ void deleteMekanik(listMekanik &LM, string IDMekanik) {
     }
 
     // Hapus semua relasi yang terkait
-    adrRelasi R = M->firstRelasi;
+    adrRelasiMekanikServis R = M->firstRelasiMekanikServis;
     while (R != NULL) {
-        adrRelasi temp = R;
-        R = R->nextRelasi;
+        adrRelasiMekanikServis temp = R;
+        R = R->nextRelasiMekanikServis;
         delete temp;
     }
 
@@ -151,6 +224,15 @@ void deleteServis(listServis &LS, string IDServis) {
         return;
     }
 
+    // Hapus semua relasi sparepart yang terkait dan kembalikan stok
+    adrRelasiServisSparepart R = S->firstRelasiServisSparepart;
+    while (R != NULL) {
+        R->sparepart->infoSparepart.stok += R->jumlah;
+        adrRelasiServisSparepart temp = R;
+        R = R->nextRelasiServisSparepart;
+        delete temp;
+    }
+
     // Hapus servis dari list
     if (prev == NULL) {
         LS.firstServis = S->nextServis;
@@ -160,7 +242,38 @@ void deleteServis(listServis &LS, string IDServis) {
 
     delete S;
     cout << "Servis dengan ID " << IDServis << " berhasil dihapus.\n";
-    cout << "Catatan: Relasi yang menggunakan servis ini masih perlu dihapus manual dari masing-masing mekanik.\n";
+}
+
+// e. Delete element child (Sparepart)
+void deleteSparepart(listSparepart &LSP, string IDSparepart) {
+    if (LSP.firstSparepart == NULL) {
+        cout << "List sparepart kosong.\n";
+        return;
+    }
+
+    adrSparepart SP = LSP.firstSparepart;
+    adrSparepart prev = NULL;
+
+    // Cari sparepart yang akan dihapus
+    while (SP != NULL && SP->infoSparepart.IDSparepart != IDSparepart) {
+        prev = SP;
+        SP = SP->nextSparepart;
+    }
+
+    if (SP == NULL) {
+        cout << "Sparepart dengan ID " << IDSparepart << " tidak ditemukan.\n";
+        return;
+    }
+
+    // Hapus sparepart dari list
+    if (prev == NULL) {
+        LSP.firstSparepart = SP->nextSparepart;
+    } else {
+        prev->nextSparepart = SP->nextSparepart;
+    }
+
+    delete SP;
+    cout << "Sparepart dengan ID " << IDSparepart << " berhasil dihapus.\n";
 }
 
 // f. Delete element relation (Mekanik-Servis)
@@ -170,18 +283,18 @@ void deleteRelationMekanikServis(adrMekanik mekanik, string IDServis) {
         return;
     }
 
-    if (mekanik->firstRelasi == NULL) {
+    if (mekanik->firstRelasiMekanikServis == NULL) {
         cout << "Mekanik tidak memiliki relasi servis.\n";
         return;
     }
 
-    adrRelasi R = mekanik->firstRelasi;
-    adrRelasi prev = NULL;
+    adrRelasiMekanikServis R = mekanik->firstRelasiMekanikServis;
+    adrRelasiMekanikServis prev = NULL;
 
     // Cari relasi yang akan dihapus
     while (R != NULL && R->servis->infoServis.IDServis != IDServis) {
         prev = R;
-        R = R->nextRelasi;
+        R = R->nextRelasiMekanikServis;
     }
 
     if (R == NULL) {
@@ -191,13 +304,53 @@ void deleteRelationMekanikServis(adrMekanik mekanik, string IDServis) {
 
     // Hapus relasi
     if (prev == NULL) {
-        mekanik->firstRelasi = R->nextRelasi;
+        mekanik->firstRelasiMekanikServis = R->nextRelasiMekanikServis;
     } else {
-        prev->nextRelasi = R->nextRelasi;
+        prev->nextRelasiMekanikServis = R->nextRelasiMekanikServis;
     }
 
     delete R;
     cout << "Relasi dengan servis " << IDServis << " berhasil dihapus dari mekanik.\n";
+}
+
+// f. Delete element relation (Servis-Sparepart)
+void deleteRelationServisSparepart(adrServis servis, string IDSparepart) {
+    if (servis == NULL) {
+        cout << "Servis tidak valid.\n";
+        return;
+    }
+
+    if (servis->firstRelasiServisSparepart == NULL) {
+        cout << "Servis tidak memiliki relasi sparepart.\n";
+        return;
+    }
+
+    adrRelasiServisSparepart R = servis->firstRelasiServisSparepart;
+    adrRelasiServisSparepart prev = NULL;
+
+    // Cari relasi yang akan dihapus
+    while (R != NULL && R->sparepart->infoSparepart.IDSparepart != IDSparepart) {
+        prev = R;
+        R = R->nextRelasiServisSparepart;
+    }
+
+    if (R == NULL) {
+        cout << "Relasi dengan sparepart " << IDSparepart << " tidak ditemukan pada servis ini.\n";
+        return;
+    }
+
+    // Kembalikan stok sparepart
+    R->sparepart->infoSparepart.stok += R->jumlah;
+
+    // Hapus relasi
+    if (prev == NULL) {
+        servis->firstRelasiServisSparepart = R->nextRelasiServisSparepart;
+    } else {
+        prev->nextRelasiServisSparepart = R->nextRelasiServisSparepart;
+    }
+
+    delete R;
+    cout << "Relasi dengan sparepart " << IDSparepart << " berhasil dihapus dari servis.\n";
 }
 
 // g. Find element Parent (Mekanik)
@@ -224,16 +377,42 @@ adrServis findServis(listServis LS, string IDServis) {
     return NULL;
 }
 
+// h. Find element child (Sparepart)
+adrSparepart findSparepart(listSparepart LSP, string IDSparepart) {
+    adrSparepart SP = LSP.firstSparepart;
+    while (SP != NULL) {
+        if (SP->infoSparepart.IDSparepart == IDSparepart) {
+            return SP;
+        }
+        SP = SP->nextSparepart;
+    }
+    return NULL;
+}
+
 // i. Find element relation (Mekanik-Servis)
 bool findRelationMekanikServis(adrMekanik mekanik, string IDServis) {
     if (mekanik == NULL) return false;
 
-    adrRelasi R = mekanik->firstRelasi;
+    adrRelasiMekanikServis R = mekanik->firstRelasiMekanikServis;
     while (R != NULL) {
         if (R->servis->infoServis.IDServis == IDServis) {
             return true;
         }
-        R = R->nextRelasi;
+        R = R->nextRelasiMekanikServis;
+    }
+    return false;
+}
+
+// i. Find element relation (Servis-Sparepart)
+bool findRelationServisSparepart(adrServis servis, string IDSparepart) {
+    if (servis == NULL) return false;
+
+    adrRelasiServisSparepart R = servis->firstRelasiServisSparepart;
+    while (R != NULL) {
+        if (R->sparepart->infoSparepart.IDSparepart == IDSparepart) {
+            return true;
+        }
+        R = R->nextRelasiServisSparepart;
     }
     return false;
 }
@@ -277,6 +456,26 @@ void showAllServis(listServis LS) {
     }
 }
 
+// k. Show all data di List Child (Sparepart)
+void showAllSparepart(listSparepart LSP) {
+    cout << "\n=== DATA SEMUA SPAREPART (CHILD) ===\n";
+    if (LSP.firstSparepart == NULL) {
+        cout << "Tidak ada data sparepart.\n";
+        return;
+    }
+
+    adrSparepart SP = LSP.firstSparepart;
+    int no = 1;
+    while (SP != NULL) {
+        cout << no << ". ID: " << SP->infoSparepart.IDSparepart
+             << " | Nama: " << SP->infoSparepart.namaSparepart
+             << " | Harga: Rp " << SP->infoSparepart.harga
+             << " | Stok: " << SP->infoSparepart.stok << "\n";
+        SP = SP->nextSparepart;
+        no++;
+    }
+}
+
 // l. Show data child dari parent tertentu (Servis dari Mekanik)
 void showServisFromMekanik(adrMekanik mekanik) {
     if (mekanik == NULL) {
@@ -285,18 +484,18 @@ void showServisFromMekanik(adrMekanik mekanik) {
     }
 
     cout << "\n=== SERVIS YANG DITANGANI OLEH: " << mekanik->infoMekanik.namaMekanik << " ===\n";
-    if (mekanik->firstRelasi == NULL) {
+    if (mekanik->firstRelasiMekanikServis == NULL) {
         cout << "Mekanik ini tidak menangani servis apapun.\n";
         return;
     }
 
-    adrRelasi R = mekanik->firstRelasi;
+    adrRelasiMekanikServis R = mekanik->firstRelasiMekanikServis;
     int no = 1;
     while (R != NULL) {
         cout << no << ". ID: " << R->servis->infoServis.IDServis
              << " | Kendaraan: " << R->servis->infoServis.namaKendaraan
              << " | Biaya: Rp " << R->servis->infoServis.biayaServis << "\n";
-        R = R->nextRelasi;
+        R = R->nextRelasiMekanikServis;
         no++;
     }
 }
@@ -314,14 +513,14 @@ void showAllMekanikWithServis(listMekanik LM) {
         cout << "\nMekanik: " << M->infoMekanik.namaMekanik
              << " (ID: " << M->infoMekanik.IDMekanik << ")\n";
 
-        if (M->firstRelasi == NULL) {
+        if (M->firstRelasiMekanikServis == NULL) {
             cout << "  - Tidak menangani servis\n";
         } else {
-            adrRelasi R = M->firstRelasi;
+            adrRelasiMekanikServis R = M->firstRelasiMekanikServis;
             while (R != NULL) {
                 cout << "  - " << R->servis->infoServis.namaKendaraan
                      << " (ID: " << R->servis->infoServis.IDServis << ")\n";
-                R = R->nextRelasi;
+                R = R->nextRelasiMekanikServis;
             }
         }
         M = M->nextMekanik;
@@ -346,7 +545,7 @@ void showAllServisWithMekanik(listMekanik LM, listServis LS) {
         bool ditangani = false;
 
         while (M != NULL) {
-            adrRelasi R = M->firstRelasi;
+            adrRelasiMekanikServis R = M->firstRelasiMekanikServis;
             while (R != NULL) {
                 if (R->servis->infoServis.IDServis == S->infoServis.IDServis) {
                     cout << "  - Ditangani oleh: " << M->infoMekanik.namaMekanik
@@ -354,7 +553,7 @@ void showAllServisWithMekanik(listMekanik LM, listServis LS) {
                     ditangani = true;
                     break;
                 }
-                R = R->nextRelasi;
+                R = R->nextRelasiMekanikServis;
             }
             M = M->nextMekanik;
         }
@@ -375,7 +574,7 @@ void showMekanikFromServis(listMekanik LM, string IDServis) {
     bool ditemukan = false;
 
     while (M != NULL) {
-        adrRelasi R = M->firstRelasi;
+        adrRelasiMekanikServis R = M->firstRelasiMekanikServis;
         while (R != NULL) {
             if (R->servis->infoServis.IDServis == IDServis) {
                 cout << "  - " << M->infoMekanik.namaMekanik
@@ -384,7 +583,7 @@ void showMekanikFromServis(listMekanik LM, string IDServis) {
                 ditemukan = true;
                 break;
             }
-            R = R->nextRelasi;
+            R = R->nextRelasiMekanikServis;
         }
         M = M->nextMekanik;
     }
@@ -399,10 +598,10 @@ int countRelationMekanikServis(adrMekanik mekanik) {
     if (mekanik == NULL) return 0;
 
     int count = 0;
-    adrRelasi R = mekanik->firstRelasi;
+    adrRelasiMekanikServis R = mekanik->firstRelasiMekanikServis;
     while (R != NULL) {
         count++;
-        R = R->nextRelasi;
+        R = R->nextRelasiMekanikServis;
     }
     return count;
 }
@@ -413,13 +612,13 @@ int countRelationFromServis(listMekanik LM, string IDServis) {
 
     adrMekanik M = LM.firstMekanik;
     while (M != NULL) {
-        adrRelasi R = M->firstRelasi;
+        adrRelasiMekanikServis R = M->firstRelasiMekanikServis;
         while (R != NULL) {
             if (R->servis->infoServis.IDServis == IDServis) {
                 count++;
-                break; // break karena sudah ditemukan di mekanik ini
+                break;
             }
-            R = R->nextRelasi;
+            R = R->nextRelasiMekanikServis;
         }
         M = M->nextMekanik;
     }
@@ -466,19 +665,179 @@ void editRelationMekanikServis(adrMekanik mekanik, string IDServisLama, string I
     deleteRelationMekanikServis(mekanik, IDServisLama);
 
     // Tambahkan relasi baru
-    adrRelasi R = new nodeRelasi;
+    adrRelasiMekanikServis R = new nodeRelasiMekanikServis;
     R->servis = SBaru;
-    R->nextRelasi = NULL;
+    R->nextRelasiMekanikServis = NULL;
 
-    if (mekanik->firstRelasi == NULL) {
-        mekanik->firstRelasi = R;
+    if (mekanik->firstRelasiMekanikServis == NULL) {
+        mekanik->firstRelasiMekanikServis = R;
     } else {
-        adrRelasi curr = mekanik->firstRelasi;
-        while (curr->nextRelasi != NULL) {
-            curr = curr->nextRelasi;
+        adrRelasiMekanikServis curr = mekanik->firstRelasiMekanikServis;
+        while (curr->nextRelasiMekanikServis != NULL) {
+            curr = curr->nextRelasiMekanikServis;
         }
-        curr->nextRelasi = R;
+        curr->nextRelasiMekanikServis = R;
     }
 
     cout << "Relasi berhasil diedit: " << IDServisLama << " -> " << IDServisBaru << "\n";
+}
+
+/* ================= FUNGSI TAMBAHAN UNTUK SERVIS-SPAREPART ================= */
+
+void showSparepartFromServis(adrServis servis) {
+    if (servis == NULL) {
+        cout << "Servis tidak valid.\n";
+        return;
+    }
+
+    cout << "\n=== SPAREPART YANG DIGUNAKAN DALAM SERVIS: " << servis->infoServis.namaKendaraan << " ===\n";
+    if (servis->firstRelasiServisSparepart == NULL) {
+        cout << "Servis ini tidak menggunakan sparepart apapun.\n";
+        return;
+    }
+
+    adrRelasiServisSparepart R = servis->firstRelasiServisSparepart;
+    int no = 1;
+    int totalBiaya = 0;
+    while (R != NULL) {
+        int subtotal = R->sparepart->infoSparepart.harga * R->jumlah;
+        cout << no << ". ID: " << R->sparepart->infoSparepart.IDSparepart
+             << " | Nama: " << R->sparepart->infoSparepart.namaSparepart
+             << " | Jumlah: " << R->jumlah
+             << " | Harga: Rp " << R->sparepart->infoSparepart.harga
+             << " | Subtotal: Rp " << subtotal << "\n";
+        totalBiaya += subtotal;
+        R = R->nextRelasiServisSparepart;
+        no++;
+    }
+    cout << "Total biaya sparepart: Rp " << totalBiaya << "\n";
+}
+
+void showAllServisWithSparepart(listServis LS) {
+    cout << "\n=== SEMUA SERVIS BESERTA SPAREPART YANG DIGUNAKAN ===\n";
+    if (LS.firstServis == NULL) {
+        cout << "Tidak ada data servis.\n";
+        return;
+    }
+
+    adrServis S = LS.firstServis;
+    while (S != NULL) {
+        cout << "\nServis: " << S->infoServis.namaKendaraan
+             << " (ID: " << S->infoServis.IDServis << ")\n";
+
+        if (S->firstRelasiServisSparepart == NULL) {
+            cout << "  - Tidak menggunakan sparepart\n";
+        } else {
+            adrRelasiServisSparepart R = S->firstRelasiServisSparepart;
+            while (R != NULL) {
+                cout << "  - " << R->sparepart->infoSparepart.namaSparepart
+                     << " (ID: " << R->sparepart->infoSparepart.IDSparepart
+                     << ", Jumlah: " << R->jumlah << ")\n";
+                R = R->nextRelasiServisSparepart;
+            }
+        }
+        S = S->nextServis;
+    }
+}
+
+void showServisFromSparepart(listServis LS, string IDSparepart) {
+    cout << "\n=== SERVIS YANG MENGGUNAKAN SPAREPART ID: " << IDSparepart << " ===\n";
+
+    adrServis S = LS.firstServis;
+    bool ditemukan = false;
+
+    while (S != NULL) {
+        adrRelasiServisSparepart R = S->firstRelasiServisSparepart;
+        while (R != NULL) {
+            if (R->sparepart->infoSparepart.IDSparepart == IDSparepart) {
+                cout << "  - " << S->infoServis.namaKendaraan
+                     << " (ID: " << S->infoServis.IDServis
+                     << ", Jumlah: " << R->jumlah << ")\n";
+                ditemukan = true;
+                break;
+            }
+            R = R->nextRelasiServisSparepart;
+        }
+        S = S->nextServis;
+    }
+
+    if (!ditemukan) {
+        cout << "Sparepart ini tidak digunakan dalam servis manapun.\n";
+    }
+}
+
+int countRelationFromSparepart(listServis LS, string IDSparepart) {
+    int count = 0;
+
+    adrServis S = LS.firstServis;
+    while (S != NULL) {
+        adrRelasiServisSparepart R = S->firstRelasiServisSparepart;
+        while (R != NULL) {
+            if (R->sparepart->infoSparepart.IDSparepart == IDSparepart) {
+                count++;
+                break;
+            }
+            R = R->nextRelasiServisSparepart;
+        }
+        S = S->nextServis;
+    }
+
+    return count;
+}
+
+int countSparepartWithoutRelation(listServis LS, listSparepart LSP) {
+    int count = 0;
+
+    adrSparepart SP = LSP.firstSparepart;
+    while (SP != NULL) {
+        if (countRelationFromSparepart(LS, SP->infoSparepart.IDSparepart) == 0) {
+            count++;
+        }
+        SP = SP->nextSparepart;
+    }
+
+    return count;
+}
+
+void editRelationServisSparepart(adrServis servis, string IDSparepartLama, string IDSparepartBaru, listSparepart LSP, int jumlahBaru) {
+    if (servis == NULL) {
+        cout << "Servis tidak valid.\n";
+        return;
+    }
+
+    if (!findRelationServisSparepart(servis, IDSparepartLama)) {
+        cout << "Sparepart lama (" << IDSparepartLama << ") tidak ditemukan dalam relasi servis ini.\n";
+        return;
+    }
+
+    adrSparepart SPBaru = findSparepart(LSP, IDSparepartBaru);
+    if (SPBaru == NULL) {
+        cout << "Sparepart baru (" << IDSparepartBaru << ") tidak ditemukan.\n";
+        return;
+    }
+
+    if (SPBaru->infoSparepart.stok < jumlahBaru) {
+        cout << "Stok sparepart baru tidak mencukupi. Stok tersedia: " << SPBaru->infoSparepart.stok << "\n";
+        return;
+    }
+
+    // Cari relasi lama
+    adrRelasiServisSparepart RLama = servis->firstRelasiServisSparepart;
+    while (RLama != NULL && RLama->sparepart->infoSparepart.IDSparepart != IDSparepartLama) {
+        RLama = RLama->nextRelasiServisSparepart;
+    }
+
+    if (RLama != NULL) {
+        // Kembalikan stok lama
+        RLama->sparepart->infoSparepart.stok += RLama->jumlah;
+
+        // Kurangi stok baru
+        SPBaru->infoSparepart.stok -= jumlahBaru;
+
+        // Update relasi
+        RLama->sparepart = SPBaru;
+        RLama->jumlah = jumlahBaru;
+
+        cout << "Relasi berhasil diedit: " << IDSparepartLama << " -> " << IDSparepartBaru << "\n";
+    }
 }
